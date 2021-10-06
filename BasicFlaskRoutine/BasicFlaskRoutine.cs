@@ -22,7 +22,6 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
     {
         public BasicFlaskRoutine() : base()
         {
-
         }
 
         public Composite Tree { get; set; }
@@ -56,7 +55,6 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
         };
 
 
-
         public override bool Initialise()
         {
             base.Initialise();
@@ -76,21 +74,18 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                 }
                 else
                     TreeCoroutine?.Pause();
-
             };
             InitCoroutine();
 
-            Settings.TicksPerSecond.OnValueChanged += (sender, b) =>
-            {
-                UpdateCoroutineWaitRender();
-            };
+            Settings.TicksPerSecond.OnValueChanged += (sender, b) => { UpdateCoroutineWaitRender(); };
 
             return true;
         }
 
         private void InitCoroutine()
         {
-            TreeCoroutine = new Coroutine(() => TickTree(Tree), new WaitTime(1000 / Settings.TicksPerSecond), this, "BasicFlaskRoutine Tree");
+            TreeCoroutine = new Coroutine(() => TickTree(Tree), new WaitTime(1000 / Settings.TicksPerSecond), this,
+                "BasicFlaskRoutine Tree");
             Core.ParallelRunner.Run(TreeCoroutine);
         }
 
@@ -114,8 +109,9 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                 PlayerMovingStopwatch.Reset();
                 return;
             }
-            if (player.Address != 0 && player.isMoving 
-                || (player.isAttacking && isTravelingSkill(player.CurrentAction.Skill)) )
+
+            if (player.Address != 0 && player.isMoving
+                || (player.isAttacking && isTravelingSkill(player.CurrentAction.Skill)))
             {
                 if (!PlayerMovingStopwatch.IsRunning)
                     PlayerMovingStopwatch.Start();
@@ -133,31 +129,34 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
 
         private Composite CreateTree()
         {
-            return new Decorator(x => TreeHelper.CanTick() && !PlayerHelper.isPlayerDead() && 
-            (!Cache.InHideout || Settings.EnableInHideout) && PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() { "grace_period" }),
-                    new PrioritySelector
-                    (
-                        new Decorator(x => Settings.AutoFlask,
+            return new Decorator(x => TreeHelper.CanTick() && !PlayerHelper.isPlayerDead() &&
+                                      (!Cache.InHideout || Settings.EnableInHideout) &&
+                                      PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() {"grace_period"}),
+                new PrioritySelector
+                (
+                    new Decorator(x => Settings.AutoFlask,
                         new PrioritySelector(
                             CreateInstantHPPotionComposite(),
                             CreateHPPotionComposite(),
                             CreateInstantManaPotionComposite(),
                             CreateManaPotionComposite()
-                            )
-                        ),
-                        CreateAilmentPotionComposite(),
-                        CreateDefensivePotionComposite(),
-                        CreateSpeedPotionComposite(),
-                        CreateOffensivePotionComposite()
-                    )
-                );
+                        )
+                    ),
+                    CreateAilmentPotionComposite(),
+                    CreateDefensivePotionComposite(),
+                    CreateSpeedPotionComposite(),
+                    CreateOffensivePotionComposite()
+                )
+            );
         }
 
         private Composite CreateInstantHPPotionComposite()
         {
-            return new Decorator((x => !Settings.BossingMode && PlayerHelper.isHealthBelowPercentage(Settings.InstantHPPotion)
-                                        || (Settings.AllocatedSupremeDecadence && PlayerHelper.isEnergyShieldBelowPercentage(Settings.InstantESPotion))
-                                ),
+            return new Decorator((x =>
+                    !Settings.BossingMode && PlayerHelper.isHealthBelowPercentage(Settings.InstantHPPotion)
+                    || (Settings.AllocatedSupremeDecadence &&
+                        PlayerHelper.isEnergyShieldBelowPercentage(Settings.InstantESPotion))
+                ),
                 new PrioritySelector(
                     CreateUseFlaskAction(FlaskActions.Life, true, true),
                     CreateUseFlaskAction(FlaskActions.Hybrid, true, true),
@@ -165,19 +164,19 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     CreateUseFlaskAction(FlaskActions.Hybrid)
                 )
             );
-
         }
 
         private Composite CreateHPPotionComposite()
         {
             return new Decorator((x => !Settings.BossingMode && PlayerHelper.isHealthBelowPercentage(Settings.HPPotion)
-                                        || (Settings.AllocatedSupremeDecadence && PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPotion))
-                                ),
-                new Decorator((x => PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() { "flask_effect_life" })),
-                 new PrioritySelector(
-                    CreateUseFlaskAction(FlaskActions.Life, false),
-                    CreateUseFlaskAction(FlaskActions.Hybrid, false)
-                 )
+                                       || (Settings.AllocatedSupremeDecadence &&
+                                           PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPotion))
+                ),
+                new Decorator((x => PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() {"flask_effect_life"})),
+                    new PrioritySelector(
+                        CreateUseFlaskAction(FlaskActions.Life, false),
+                        CreateUseFlaskAction(FlaskActions.Hybrid, false)
+                    )
                 )
             );
         }
@@ -194,8 +193,12 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
 
         private Composite CreateManaPotionComposite()
         {
-            return new Decorator((x => PlayerHelper.isManaBelowPercentage(Settings.ManaPotion) || PlayerHelper.isManaBelowValue(Settings.MinManaFlask)),
-                new Decorator((x => PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() { "flask_effect_mana", "flask_effect_mana_not_removed_when_full" })),
+            return new Decorator(
+                (x => PlayerHelper.isManaBelowPercentage(Settings.ManaPotion) ||
+                      PlayerHelper.isManaBelowValue(Settings.MinManaFlask)),
+                new Decorator(
+                    (x => PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>()
+                        {"flask_effect_mana", "flask_effect_mana_not_removed_when_full"})),
                     new PrioritySelector(
                         CreateUseFlaskAction(FlaskActions.Mana, false),
                         CreateUseFlaskAction(FlaskActions.Hybrid, false)
@@ -207,23 +210,29 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
         private Composite CreateSpeedPotionComposite()
         {
             return new Decorator((x => Settings.SpeedFlaskEnable
-                                    && (Settings.MinMsPlayerMoving <= PlayerMovingStopwatch.ElapsedMilliseconds
-                                        || Settings.UseWhileCycloning 
-                                            && IsCycloning() 
-                                            && (Settings.CycloningMonsterCount == 0 
-                                                || HasEnoughNearbyMonsters(Settings.CycloningMonsterCount, 
-                                                                           Settings.CycloningMonsterDistance, 
-                                                                           Settings.CycloningCountNormalMonsters, 
-                                                                           Settings.CycloningCountRareMonsters, 
-                                                                           Settings.CycloningCountMagicMonsters, 
-                                                                           Settings.CycloningCountUniqueMonsters,
-                                                                           Settings.CycloningIgnoreFullHealthUniqueMonsters))) 
-                                    && (PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() { "flask_bonus_movement_speed", "flask_utility_sprint","flask_utility_phase"}) 
-                                        || (!Settings.SilverFlaskEnable 
-                                            || PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>() { "flask_utility_haste" })))),
+                                       && (Settings.MinMsPlayerMoving <= PlayerMovingStopwatch.ElapsedMilliseconds
+                                           || Settings.UseWhileCycloning
+                                           && IsCycloning()
+                                           && (Settings.CycloningMonsterCount == 0
+                                               || HasEnoughNearbyMonsters(Settings.CycloningMonsterCount,
+                                                   Settings.CycloningMonsterDistance,
+                                                   Settings.CycloningCountNormalMonsters,
+                                                   Settings.CycloningCountRareMonsters,
+                                                   Settings.CycloningCountMagicMonsters,
+                                                   Settings.CycloningCountUniqueMonsters,
+                                                   Settings.CycloningIgnoreFullHealthUniqueMonsters)))
+                                       && (PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>()
+                                           {
+                                               "flask_bonus_movement_speed", "flask_utility_sprint",
+                                               "flask_utility_phase"
+                                           })
+                                           || (!Settings.SilverFlaskEnable
+                                               || PlayerHelper.playerDoesNotHaveAnyOfBuffs(new List<string>()
+                                                   {"flask_utility_haste"})))),
                 new PrioritySelector(
                     new Decorator((x => Settings.QuicksilverFlaskEnable), CreateUseFlaskAction(FlaskActions.Speedrun)),
-                    new Decorator((x => Settings.SilverFlaskEnable), CreateUseFlaskAction(FlaskActions.OFFENSE_AND_SPEEDRUN))
+                    new Decorator((x => Settings.SilverFlaskEnable),
+                        CreateUseFlaskAction(FlaskActions.OFFENSE_AND_SPEEDRUN))
                 )
             );
         }
@@ -231,11 +240,23 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
         private Composite CreateDefensivePotionComposite()
         {
             return new Decorator((x => Settings.DefensiveFlaskEnable && !Settings.BossingMode &&
-            (PlayerHelper.isHealthBelowPercentage(Settings.HPPercentDefensive) || PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPercentDefensive) || 
-            Settings.DefensiveMonsterCount > 0 && HasEnoughNearbyMonsters(Settings.DefensiveMonsterCount, Settings.DefensiveMonsterDistance, Settings.DefensiveCountNormalMonsters, Settings.DefensiveCountRareMonsters, Settings.DefensiveCountMagicMonsters, Settings.DefensiveCountUniqueMonsters, Settings.DefensiveIgnoreFullHealthUniqueMonsters))),
+                                       (PlayerHelper.isHealthBelowPercentage(Settings.HPPercentDefensive) ||
+                                        PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPercentDefensive) ||
+                                        Settings.DefensiveMonsterCount > 0 && HasEnoughNearbyMonsters(
+                                            Settings.DefensiveMonsterCount, Settings.DefensiveMonsterDistance,
+                                            Settings.DefensiveCountNormalMonsters, Settings.DefensiveCountRareMonsters,
+                                            Settings.DefensiveCountMagicMonsters, Settings.DefensiveCountUniqueMonsters,
+                                            Settings.DefensiveIgnoreFullHealthUniqueMonsters))),
                 new PrioritySelector(
                     CreateUseFlaskAction(FlaskActions.Defense),
-                    new Decorator((x => Settings.OffensiveAsDefensiveEnable), CreateUseFlaskAction(new List<FlaskActions> { FlaskActions.OFFENSE_AND_SPEEDRUN, FlaskActions.Defense }, ignoreFlasksWithAction: (() => Settings.DisableLifeSecUse ? new List<FlaskActions>() { FlaskActions.Life, FlaskActions.Mana, FlaskActions.Hybrid } : null)))
+                    new Decorator((x => Settings.OffensiveAsDefensiveEnable),
+                        CreateUseFlaskAction(
+                            new List<FlaskActions> {FlaskActions.OFFENSE_AND_SPEEDRUN, FlaskActions.Defense},
+                            ignoreFlasksWithAction: (() =>
+                                Settings.DisableLifeSecUse
+                                    ? new List<FlaskActions>()
+                                        {FlaskActions.Life, FlaskActions.Mana, FlaskActions.Hybrid}
+                                    : null)))
                 )
             );
         }
@@ -243,9 +264,20 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
         private Composite CreateOffensivePotionComposite()
         {
             return new PrioritySelector(
-                new Decorator((x => Settings.OffensiveFlaskEnable && !Settings.BossingMode && 
-                (PlayerHelper.isHealthBelowPercentage(Settings.HPPercentOffensive) || PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPercentOffensive) || Settings.OffensiveMonsterCount > 0 && HasEnoughNearbyMonsters(Settings.OffensiveMonsterCount, Settings.OffensiveMonsterDistance, Settings.OffensiveCountNormalMonsters, Settings.OffensiveCountRareMonsters, Settings.OffensiveCountMagicMonsters, Settings.OffensiveCountUniqueMonsters, Settings.OffensiveIgnoreFullHealthUniqueMonsters))),
-                    CreateUseFlaskAction(new List<FlaskActions> { FlaskActions.Offense, FlaskActions.OFFENSE_AND_SPEEDRUN }, ignoreFlasksWithAction: (() => Settings.DisableLifeSecUse ?  new List<FlaskActions>() { FlaskActions.Life, FlaskActions.Mana, FlaskActions.Hybrid} : null)))
+                new Decorator((x => Settings.OffensiveFlaskEnable && !Settings.BossingMode &&
+                                    (PlayerHelper.isHealthBelowPercentage(Settings.HPPercentOffensive) ||
+                                     PlayerHelper.isEnergyShieldBelowPercentage(Settings.ESPercentOffensive) ||
+                                     Settings.OffensiveMonsterCount > 0 && HasEnoughNearbyMonsters(
+                                         Settings.OffensiveMonsterCount, Settings.OffensiveMonsterDistance,
+                                         Settings.OffensiveCountNormalMonsters, Settings.OffensiveCountRareMonsters,
+                                         Settings.OffensiveCountMagicMonsters, Settings.OffensiveCountUniqueMonsters,
+                                         Settings.OffensiveIgnoreFullHealthUniqueMonsters))),
+                    CreateUseFlaskAction(
+                        new List<FlaskActions> {FlaskActions.Offense, FlaskActions.OFFENSE_AND_SPEEDRUN},
+                        ignoreFlasksWithAction: (() =>
+                            Settings.DisableLifeSecUse
+                                ? new List<FlaskActions>() {FlaskActions.Life, FlaskActions.Mana, FlaskActions.Hybrid}
+                                : null)))
             );
         }
 
@@ -253,27 +285,47 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
         {
             return new Decorator(x => Settings.RemAilment && !Settings.BossingMode,
                 new PrioritySelector(
-                    new Decorator(x => Settings.RemBleed, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Bleeding, CreateUseFlaskAction(FlaskActions.BleedImmune, isCleansing:true))),
-                    new Decorator(x => Settings.RemBurning, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Burning, CreateUseFlaskAction(FlaskActions.IgniteImmune, isCleansing: true))),
-                    CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Corruption, CreateUseFlaskAction(FlaskActions.BleedImmune, isCleansing: true), (() => Settings.CorruptCount)),
-                    new Decorator(x => Settings.RemFrozen, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Frozen, CreateUseFlaskAction(FlaskActions.FreezeImmune, isCleansing: true))),
-                    new Decorator(x => Settings.RemPoison, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Poisoned, CreateUseFlaskAction(FlaskActions.PoisonImmune, isCleansing: true))),
-                    new Decorator(x => Settings.RemShocked, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Shocked, CreateUseFlaskAction(FlaskActions.ShockImmune, isCleansing: true))),
-                    new Decorator(x => Settings.RemCurse, CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.WeakenedSlowed, CreateUseFlaskAction(FlaskActions.CurseImmune, isCleansing: true)))
-                    )
-                );
+                    new Decorator(x => Settings.RemBleed,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Bleeding,
+                            CreateUseFlaskAction(FlaskActions.BleedImmune, isCleansing: true))),
+                    new Decorator(x => Settings.RemBurning,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Burning,
+                            CreateUseFlaskAction(FlaskActions.IgniteImmune, isCleansing: true))),
+                    CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Corruption,
+                        CreateUseFlaskAction(FlaskActions.BleedImmune, isCleansing: true),
+                        (() => Settings.CorruptCount)),
+                    new Decorator(x => Settings.RemFrozen,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Frozen,
+                            CreateUseFlaskAction(FlaskActions.FreezeImmune, isCleansing: true))),
+                    new Decorator(x => Settings.RemPoison,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Poisoned,
+                            CreateUseFlaskAction(FlaskActions.PoisonImmune, isCleansing: true))),
+                    new Decorator(x => Settings.RemShocked,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.Shocked,
+                            CreateUseFlaskAction(FlaskActions.ShockImmune, isCleansing: true))),
+                    new Decorator(x => Settings.RemCurse,
+                        CreateCurableDebuffDecorator(Cache.DebuffPanelConfig.WeakenedSlowed,
+                            CreateUseFlaskAction(FlaskActions.CurseImmune, isCleansing: true)))
+                )
+            );
         }
 
-        private Composite CreateUseFlaskAction(FlaskActions flaskAction, Boolean? instant = null, Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null, Boolean isCleansing = false)
+        private Composite CreateUseFlaskAction(FlaskActions flaskAction, Boolean? instant = null,
+            Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null,
+            Boolean isCleansing = false)
         {
-            return CreateUseFlaskAction(new List<FlaskActions> { flaskAction }, instant, ignoreBuffs, ignoreFlasksWithAction, isCleansing);
+            return CreateUseFlaskAction(new List<FlaskActions> {flaskAction}, instant, ignoreBuffs,
+                ignoreFlasksWithAction, isCleansing);
         }
 
-        private Composite CreateUseFlaskAction(List<FlaskActions> flaskActions, Boolean? instant = null, Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null, Boolean isCleansing = false)
+        private Composite CreateUseFlaskAction(List<FlaskActions> flaskActions, Boolean? instant = null,
+            Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null,
+            Boolean isCleansing = false)
         {
             return new UseHotkeyAction(KeyboardHelper, x =>
             {
-                var foundFlask = FindFlaskMatchingAnyAction(flaskActions, instant, ignoreBuffs, ignoreFlasksWithAction, isCleansing);
+                var foundFlask = FindFlaskMatchingAnyAction(flaskActions, instant, ignoreBuffs, ignoreFlasksWithAction,
+                    isCleansing);
 
                 if (foundFlask == null)
                 {
@@ -284,7 +336,8 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
             });
         }
 
-        private Boolean HasEnoughNearbyMonsters(int minimumMonsterCount, int maxDistance, bool countNormal, bool countRare, bool countMagic, bool countUnique, bool ignoreUniqueIfFullHealth)
+        private Boolean HasEnoughNearbyMonsters(int minimumMonsterCount, int maxDistance, bool countNormal,
+            bool countRare, bool countMagic, bool countUnique, bool ignoreUniqueIfFullHealth)
         {
             var mobCount = 0;
             var maxDistanceSquare = maxDistance * maxDistance;
@@ -339,29 +392,41 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     {
                         if (Settings.Debug)
                         {
-                            Log("NearbyMonstersCondition returning true because " + mobCount + " mobs valid monsters were found nearby.", 2);
+                            Log(
+                                "NearbyMonstersCondition returning true because " + mobCount +
+                                " mobs valid monsters were found nearby.", 2);
                         }
+
                         return true;
                     }
                 }
-            } else if (Settings.Debug)
+            }
+            else if (Settings.Debug)
             {
                 Log("NearbyMonstersCondition returning false because mob list was invalid.", 2);
             }
 
             if (Settings.Debug)
             {
-                Log("NearbyMonstersCondition returning false because " + mobCount + " mobs valid monsters were found nearby.", 2);
+                Log(
+                    "NearbyMonstersCondition returning false because " + mobCount +
+                    " mobs valid monsters were found nearby.", 2);
             }
+
             return false;
         }
 
-        private PlayerFlask FindFlaskMatchingAnyAction(FlaskActions flaskAction, Boolean? instant = null, Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null, Boolean isCleansing = false)
+        private PlayerFlask FindFlaskMatchingAnyAction(FlaskActions flaskAction, Boolean? instant = null,
+            Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null,
+            Boolean isCleansing = false)
         {
-            return FindFlaskMatchingAnyAction(new List<FlaskActions> { flaskAction }, instant, ignoreBuffs, ignoreFlasksWithAction, isCleansing);
+            return FindFlaskMatchingAnyAction(new List<FlaskActions> {flaskAction}, instant, ignoreBuffs,
+                ignoreFlasksWithAction, isCleansing);
         }
 
-        private PlayerFlask FindFlaskMatchingAnyAction(List<FlaskActions> flaskActions, Boolean? instant = null, Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null, Boolean isCleansing = false)
+        private PlayerFlask FindFlaskMatchingAnyAction(List<FlaskActions> flaskActions, Boolean? instant = null,
+            Boolean ignoreBuffs = false, Func<List<FlaskActions>> ignoreFlasksWithAction = null,
+            Boolean isCleansing = false)
         {
             var allFlasks = FlaskHelper.GetAllFlaskInfo();
 
@@ -383,20 +448,23 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
             {
                 foreach (var flask in allFlasks)
                 {
-                    LogMessage($"{Name}: Flask: {flask.Name} Slot: {flask.Index} Instant: {flask.InstantType} Action1: {flask.Action1} Action2: {flask.Action2}", 5);
+                    LogMessage(
+                        $"{Name}: Flask: {flask.Name} Slot: {flask.Index} Instant: {flask.InstantType} Action1: {flask.Action1} Action2: {flask.Action2}",
+                        5);
                 }
             }
 
             List<FlaskActions> ignoreFlaskActions = ignoreFlasksWithAction == null ? null : ignoreFlasksWithAction();
 
             var flaskList = allFlasks
-                    .Where(x =>
+                .Where(x =>
                     Settings.FlaskSettings[x.Index].Enabled
                     && FlaskHasAvailableAction(flaskActions, ignoreFlaskActions, x)
                     && FlaskHelper.CanUsePotion(x, Settings.FlaskSettings[x.Index].ReservedUses, isCleansing)
                     && FlaskMatchesInstant(x, instant)
                     && (ignoreBuffs || MissingFlaskBuff(x))
-                    ).OrderByDescending(x => flaskActions.Contains(x.Action1)).ThenByDescending(x => x.TotalUses - Settings.FlaskSettings[x.Index].ReservedUses).ToList();
+                ).OrderByDescending(x => flaskActions.Contains(x.Action1))
+                .ThenByDescending(x => x.TotalUses - Settings.FlaskSettings[x.Index].ReservedUses).ToList();
 
             if (flaskList == null || !flaskList.Any())
             {
@@ -406,56 +474,68 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
             }
 
             if (Settings.Debug)
-                LogMessage(Name + ": Flask(s) found for action: " + flaskActions[0] + " Flask Count: " + flaskList.Count(), 1);
+                LogMessage(
+                    Name + ": Flask(s) found for action: " + flaskActions[0] + " Flask Count: " + flaskList.Count(), 1);
 
             return flaskList.FirstOrDefault();
         }
 
-        private bool FlaskHasAvailableAction(List<FlaskActions> flaskActions, List<FlaskActions> ignoreFlaskActions, PlayerFlask flask)
+        private bool FlaskHasAvailableAction(List<FlaskActions> flaskActions, List<FlaskActions> ignoreFlaskActions,
+            PlayerFlask flask)
         {
             return flaskActions.Any(x => x == flask.Action1 || x == flask.Action2)
-                    && (ignoreFlaskActions == null || !ignoreFlaskActions.Any(x => x == flask.Action1 || x == flask.Action2));
+                   && (ignoreFlaskActions == null ||
+                       !ignoreFlaskActions.Any(x => x == flask.Action1 || x == flask.Action2));
         }
 
         private bool FlaskMatchesInstant(PlayerFlask playerFlask, Boolean? instant)
         {
-            return instant == null 
-                    || instant == false && CanUseFlaskAsRegen(playerFlask)
-                    || instant == true && CanUseFlaskAsInstant(playerFlask);
+            return instant == null
+                   || instant == false && CanUseFlaskAsRegen(playerFlask)
+                   || instant == true && CanUseFlaskAsInstant(playerFlask);
         }
 
         private bool CanUseFlaskAsInstant(PlayerFlask playerFlask)
         {
             // If the flask is instant, no special logic needed
             return playerFlask.InstantType == FlaskInstantType.Partial
-                    || playerFlask.InstantType == FlaskInstantType.Full
-                    || (playerFlask.InstantType == FlaskInstantType.LowLife && (PlayerHelper.isHealthBelowPercentage(50)
-                                                                                || Settings.AllocatedSupremeDecadence && IsReallyLowLife()));
+                   || playerFlask.InstantType == FlaskInstantType.Full
+                   || (playerFlask.InstantType == FlaskInstantType.LowLife && (PlayerHelper.isHealthBelowPercentage(50)
+                                                                               || Settings.AllocatedSupremeDecadence &&
+                                                                               IsReallyLowLife()));
         }
 
         private bool CanUseFlaskAsRegen(PlayerFlask playerFlask)
         {
             return playerFlask.InstantType == FlaskInstantType.None
-                    || playerFlask.InstantType == FlaskInstantType.Partial && !Settings.ForceBubblingAsInstantOnly
-                    || playerFlask.InstantType == FlaskInstantType.LowLife && !Settings.ForcePanickedAsInstantOnly;
+                   || playerFlask.InstantType == FlaskInstantType.Partial && !Settings.ForceBubblingAsInstantOnly
+                   || playerFlask.InstantType == FlaskInstantType.LowLife && !Settings.ForcePanickedAsInstantOnly;
         }
 
         private bool MissingFlaskBuff(PlayerFlask playerFlask)
         {
-            return !PlayerHelper.playerHasBuffs(new List<string> { playerFlask.BuffString1 }) || !PlayerHelper.playerHasBuffs(new List<string> { playerFlask.BuffString2 });
+            return !PlayerHelper.playerHasBuffs(new List<string> {playerFlask.BuffString1}) ||
+                   !PlayerHelper.playerHasBuffs(new List<string> {playerFlask.BuffString2});
         }
 
         private bool IsCycloning()
         {
-            try {
-                var buffs = GameController.Game.IngameState.Data.LocalPlayer.GetComponent<ExileCore.PoEMemory.Components.Buffs>().BuffsList;
+            try
+            {
+                var buffs = GameController.Game.IngameState.Data.LocalPlayer
+                    .GetComponent<ExileCore.PoEMemory.Components.Buffs>().BuffsList;
 
                 foreach (var buff in buffs)
                     if (buff.Name.ToLower().Equals("cyclone_channelled_stage"))
-                        return float.IsInfinity(buff.Timer);}
-            catch {
+                        return float.IsInfinity(buff.Timer);
+            }
+            catch
+            {
                 if (Settings.Debug)
-                    LogError("BasicFlaskRoutine: Using Speed Flasks while Cycloning is enabled, but cannot get player buffs. Try to update PoeHUD.", 5);}
+                    LogError(
+                        "BasicFlaskRoutine: Using Speed Flasks while Cycloning is enabled, but cannot get player buffs. Try to update PoeHUD.",
+                        5);
+            }
 
             return false;
         }
@@ -467,11 +547,13 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
             return (playerLife.CurHP / playerLife.MaxHP) * 100 < 50;
         }
 
-        private Decorator CreateCurableDebuffDecorator(Dictionary<string, int> dictionary, Composite child, Func<int> minCharges = null)
+        private Decorator CreateCurableDebuffDecorator(Dictionary<string, int> dictionary, Composite child,
+            Func<int> minCharges = null)
         {
             return new Decorator((x =>
             {
-                var buffs = GameController.Game.IngameState.Data.LocalPlayer.GetComponent<ExileCore.PoEMemory.Components.Buffs>().BuffsList;
+                var buffs = GameController.Game.IngameState.Data.LocalPlayer
+                    .GetComponent<ExileCore.PoEMemory.Components.Buffs>().BuffsList;
                 if (buffs == null) return false;
                 foreach (var buff in buffs)
                 {
@@ -485,6 +567,7 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                         return (filterId == 0 || filterId != 1) && (minCharges == null || buff.Charges >= minCharges());
                     }
                 }
+
                 return false;
             }), child);
         }
@@ -496,9 +579,13 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
             if (Settings.BossingModeToggle && Settings.BossingModeHotkey.PressedOnce())
             {
                 Settings.BossingMode = !Settings.BossingMode;
-                if (Settings.BossingMode) LogMessage("BossingMode Activated! No automatic flasking until disabled.", 5, Color.Red);
+                if (Settings.BossingMode)
+                    LogMessage("BossingMode Activated! No automatic flasking until disabled.", 5, Color.Red);
                 else LogMessage("BossingMode deactivated.", 5);
             }
+
+            var color = Settings.BossingMode ? Color.Green : Color.Red;
+            Graphics.DrawText("BOSSING MODE", new Vector2(100, 100), color, 32);
         }
 
         public override void DrawSettings()
@@ -512,13 +599,16 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                 Settings.EnableInHideout.Value = ImGuiExtension.Checkbox("Enable in Hideout", Settings.EnableInHideout);
                 ImGui.Separator();
                 Settings.TicksPerSecond.Value = ImGuiExtension.IntSlider("Ticks Per Second", Settings.TicksPerSecond);
-                ImGuiExtension.ToolTipWithText("(?)", "Determines how many times the plugin checks flasks every second.\nLower for less resources, raise for faster response (but higher chance to chug potions).");
+                ImGuiExtension.ToolTipWithText("(?)",
+                    "Determines how many times the plugin checks flasks every second.\nLower for less resources, raise for faster response (but higher chance to chug potions).");
                 ImGui.Separator();
                 Settings.Debug.Value = ImGuiExtension.Checkbox("Debug Mode", Settings.Debug);
                 ImGui.Separator();
-                Settings.BossingModeToggle.Value = ImGuiExtension.Checkbox("Disable Defensive and Offensive Flasking", Settings.BossingModeToggle);
+                Settings.BossingModeToggle.Value = ImGuiExtension.Checkbox("Disable Defensive and Offensive Flasking",
+                    Settings.BossingModeToggle);
                 ImGui.Separator();
-                Settings.BossingModeHotkey.Value = ImGuiExtension.HotkeySelector("BossingModeHotkey", Settings.BossingModeHotkey.Value);
+                Settings.BossingModeHotkey.Value =
+                    ImGuiExtension.HotkeySelector("BossingModeHotkey", Settings.BossingModeHotkey.Value);
                 ImGui.TreePop();
             }
 
@@ -563,10 +653,12 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     Settings.InstantHPPotion.Value =
                         ImGuiExtension.IntSlider("Min Life % Auto Instant HP Flask", Settings.InstantHPPotion);
                     Settings.AllocatedSupremeDecadence.Value =
-                        ImGuiExtension.Checkbox("Enable use Life/Hybrid Flasks to restore Energy Shield", Settings.AllocatedSupremeDecadence);
-                    ImGuiExtension.ToolTipWithText("(?)", "When enabled, Life-recovery flasks will also be used to recovery Energy Shield." +
-                                                          "\nWarning: Life/Hybrid Flasks without Remove Ailments affix will not be used when on full life " +
-                                                          "\n        (example: ~20 points non-Reserved Life is always equal full life) because it is game mechanics.");
+                        ImGuiExtension.Checkbox("Enable use Life/Hybrid Flasks to restore Energy Shield",
+                            Settings.AllocatedSupremeDecadence);
+                    ImGuiExtension.ToolTipWithText("(?)",
+                        "When enabled, Life-recovery flasks will also be used to recovery Energy Shield." +
+                        "\nWarning: Life/Hybrid Flasks without Remove Ailments affix will not be used when on full life " +
+                        "\n        (example: ~20 points non-Reserved Life is always equal full life) because it is game mechanics.");
                     Settings.ESPotion.Value =
                         ImGuiExtension.IntSlider("Min Energy Shield % Auto HP Flask", Settings.ESPotion);
                     Settings.InstantESPotion.Value =
@@ -639,7 +731,8 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     Settings.CycloningCountUniqueMonsters.Value =
                         ImGuiExtension.Checkbox("Unique Monsters", Settings.CycloningCountUniqueMonsters);
                     Settings.CycloningIgnoreFullHealthUniqueMonsters.Value =
-                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters", Settings.CycloningIgnoreFullHealthUniqueMonsters);
+                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters",
+                            Settings.CycloningIgnoreFullHealthUniqueMonsters);
                     ImGui.TreePop();
                 }
 
@@ -671,7 +764,8 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     Settings.DefensiveCountUniqueMonsters.Value =
                         ImGuiExtension.Checkbox("Unique Monsters", Settings.DefensiveCountUniqueMonsters);
                     Settings.DefensiveIgnoreFullHealthUniqueMonsters.Value =
-                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters", Settings.DefensiveIgnoreFullHealthUniqueMonsters);
+                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters",
+                            Settings.DefensiveIgnoreFullHealthUniqueMonsters);
                     ImGui.TreePop();
                 }
 
@@ -699,7 +793,8 @@ namespace TreeRoutine.Routine.BasicFlaskRoutine
                     Settings.OffensiveCountUniqueMonsters.Value =
                         ImGuiExtension.Checkbox("Unique Monsters", Settings.OffensiveCountUniqueMonsters);
                     Settings.OffensiveIgnoreFullHealthUniqueMonsters.Value =
-                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters", Settings.OffensiveIgnoreFullHealthUniqueMonsters);
+                        ImGuiExtension.Checkbox("Ignore Full Health Unique Monsters",
+                            Settings.OffensiveIgnoreFullHealthUniqueMonsters);
                     ImGui.TreePop();
                 }
 
